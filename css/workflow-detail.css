@@ -1,0 +1,317 @@
+/* ==========================================
+   TechFlows TN — Workflow Detail Page Styles
+   ========================================== */
+
+/* ---- Skeleton / Loading ---- */
+.detail-skeleton-hero {
+  width: 100%;
+  max-width: 900px;
+  height: 420px;
+  border-radius: var(--radius-xl);
+  margin: 100px auto 0;
+  background: linear-gradient(90deg, #1a1a1a 25%, #222 50%, #1a1a1a 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.skeleton-text {
+  border-radius: var(--radius-md);
+  background: linear-gradient(90deg, #1a1a1a 25%, #222 50%, #1a1a1a 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  margin-bottom: 12px;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ---- Breadcrumb ---- */
+.detail-breadcrumb {
+  margin-bottom: 20px;
+}
+
+.detail-breadcrumb a {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.detail-breadcrumb a:hover { color: var(--salmon); }
+
+/* ---- Hero ---- */
+.detail-hero {
+  padding: 130px 0 72px;
+  position: relative;
+  overflow: hidden;
+}
+
+.detail-hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(250, 128, 114, 0.08) 0%, transparent 70%);
+}
+
+.detail-hero .container { position: relative; z-index: 2; }
+
+.detail-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.detail-title {
+  font-size: clamp(2rem, 5vw, 3.8rem);
+  font-weight: 900;
+  color: var(--white);
+  line-height: 1.1;
+  margin-bottom: 16px;
+  max-width: 800px;
+}
+
+.detail-subtitle {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  max-width: 660px;
+  line-height: 1.7;
+  margin-bottom: 32px;
+}
+
+.detail-hero-actions {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* ---- Featured Badge ---- */
+.featured-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(250, 200, 50, 0.1);
+  border: 1px solid rgba(250, 200, 50, 0.3);
+  color: #f5c842;
+  padding: 5px 14px;
+  border-radius: 100px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* ---- Detail section layout ---- */
+.detail-section { padding-top: 0; background: var(--black); }
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+/* ---- Sidebar ---- */
+.detail-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: sticky;
+  top: 100px;
+}
+
+.detail-image-card {
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  border: 1px solid rgba(245, 240, 232, 0.08);
+  background: var(--black-card);
+  box-shadow: var(--shadow-card);
+}
+
+.detail-img {
+  width: 100%;
+  display: block;
+  height: 220px;
+  object-fit: cover;
+  transition: var(--transition);
+}
+
+.detail-image-card:hover .detail-img {
+  transform: scale(1.02);
+}
+
+/* Price & tools in sidebar */
+.include-item {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(245, 240, 232, 0.05);
+}
+
+.include-item:last-child { border-bottom: none; }
+
+/* ---- Main content ---- */
+.detail-main {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Long description styles */
+.detail-long-desc p {
+  font-size: 0.97rem;
+  color: var(--text-secondary);
+  line-height: 1.8;
+  margin-bottom: 14px;
+}
+
+.detail-long-desc li {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  padding: 6px 0 6px 20px;
+  position: relative;
+  line-height: 1.6;
+}
+
+.detail-long-desc li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 14px;
+  width: 8px;
+  height: 8px;
+  background: var(--salmon);
+  border-radius: 50%;
+}
+
+/* ---- CTA Banner ---- */
+.detail-cta-banner {
+  background: linear-gradient(135deg, rgba(250, 128, 114, 0.1) 0%, rgba(250, 128, 114, 0.04) 100%);
+  border: 1px solid rgba(250, 128, 114, 0.2);
+  border-radius: var(--radius-lg);
+  padding: 28px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+/* ---- Workflow card thumbnail (store page) ---- */
+.workflow-thumb {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  overflow: hidden;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background: var(--black-card);
+}
+
+.workflow-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: var(--transition);
+}
+
+.workflow-card:hover .workflow-thumb img {
+  transform: scale(1.04);
+}
+
+.workflow-thumb .featured-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+}
+
+/* View Details Button */
+.btn-details {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid rgba(245, 240, 232, 0.2);
+  color: var(--text-secondary);
+  padding: 9px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: var(--font-main);
+  transition: var(--transition);
+  text-decoration: none;
+}
+
+.btn-details:hover {
+  border-color: var(--salmon);
+  color: var(--salmon);
+  background: rgba(250, 128, 114, 0.06);
+}
+
+/* Skeleton cards in workflows store */
+.skeleton-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.skeleton-card {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid rgba(245, 240, 232, 0.07);
+  background: var(--black-card);
+}
+
+.skeleton-card-img {
+  height: 180px;
+  background: linear-gradient(90deg, #1a1a1a 25%, #222 50%, #1a1a1a 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.skeleton-card-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skeleton-line {
+  height: 14px;
+  border-radius: 7px;
+  background: linear-gradient(90deg, #1a1a1a 25%, #222 50%, #1a1a1a 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Error state in store */
+.store-error {
+  display: none;
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 24px;
+}
+
+.store-error p { font-size: 1rem; color: var(--text-secondary); }
+
+/* ---- Responsive ---- */
+@media (max-width: 1024px) {
+  .detail-grid { grid-template-columns: 300px 1fr; gap: 24px; }
+}
+
+@media (max-width: 768px) {
+  .detail-grid { grid-template-columns: 1fr; }
+  .detail-sidebar { position: static; }
+  .detail-cta-banner { flex-direction: column; align-items: flex-start; }
+  .detail-hero { padding: 110px 0 56px; }
+  .skeleton-cards-grid { grid-template-columns: 1fr; }
+  .workflow-thumbnail { height: 160px; }
+  .detail-hero-actions { flex-direction: column; align-items: flex-start; }
+  #detailContent .container { padding: 0 16px; }
+}

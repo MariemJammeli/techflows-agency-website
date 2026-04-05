@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Workflow Details – TechFlows TN" />
+  <title>Workflow Details – TechFlows TN</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/workflow-detail.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>" />
+</head>
+<body style="opacity:0">
+
+<!-- ===== NAVBAR ===== -->
+<nav class="navbar" id="navbar">
+  <div class="nav-container">
+    <a href="index.html" class="nav-logo">Tech<span>Flows</span> TN</a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="services.html">Services</a>
+      <a href="workflows.html" class="active">Workflows</a>
+      <a href="about.html">About</a>
+      <a href="contact.html" class="nav-cta">Contact Us</a>
+    </div>
+    <div class="hamburger" id="hamburger"><span></span><span></span><span></span></div>
+  </div>
+</nav>
+<div class="mobile-nav" id="mobileNav">
+  <a href="index.html">Home</a>
+  <a href="services.html">Services</a>
+  <a href="workflows.html">Workflows</a>
+  <a href="about.html">About</a>
+  <a href="contact.html">Contact</a>
+</div>
+
+<!-- ===== LOADING STATE ===== -->
+<div id="detailLoading" style="min-height:100vh; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:20px; padding-top:80px;">
+  <div class="detail-skeleton-hero"></div>
+  <div class="skeleton-text" style="width:60%; height:40px; margin:0 auto;"></div>
+  <div class="skeleton-text" style="width:40%; height:20px; margin:0 auto;"></div>
+</div>
+
+<!-- ===== ERROR STATE ===== -->
+<div id="detailError" style="display:none; min-height:100vh; display:none; align-items:center; justify-content:center; padding-top:120px;">
+  <div style="text-align:center; padding:60px 24px;">
+    <p style="font-size:3rem; margin-bottom:16px;">⚠️</p>
+    <h2 style="color:var(--white); margin-bottom:12px;">Workflow Not Found</h2>
+    <p class="error-msg" style="color:var(--text-secondary); margin-bottom:28px;">This workflow could not be loaded.</p>
+    <a href="workflows.html" class="btn btn-primary">← Back to Store</a>
+  </div>
+</div>
+
+<!-- ===== DETAIL CONTENT ===== -->
+<div id="detailContent" style="display:none;">
+
+  <!-- Hero -->
+  <section class="detail-hero">
+    <div class="detail-hero-bg">
+      <div class="hero-orb orb1" style="opacity:0.15;"></div>
+      <div class="hero-orb orb2" style="opacity:0.12;"></div>
+    </div>
+    <div class="container">
+      <div class="detail-breadcrumb reveal">
+        <a href="workflows.html">← Back to Workflows Store</a>
+      </div>
+      <div class="detail-meta reveal">
+        <span class="section-tag" id="detailCategory">Category</span>
+        <span id="detailFeatured" class="featured-badge" style="display:none;">⭐ Featured</span>
+      </div>
+      <h1 id="detailTitle" class="detail-title reveal">Loading...</h1>
+      <p id="detailShortDesc" class="detail-subtitle reveal"></p>
+      <div class="detail-hero-actions reveal">
+        <button id="detailBuyBtn" class="btn btn-primary btn-lg">
+          Buy Now — <span id="detailPrice">$0</span>
+        </button>
+        <a id="detailDemoBtn" href="#" class="btn btn-outline btn-lg">Request Demo →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Detail Layout -->
+  <section class="section detail-section">
+    <div class="container">
+      <div class="detail-grid">
+
+        <!-- Left: Image + Tools sidebar -->
+        <aside class="detail-sidebar">
+          <!-- Workflow Image -->
+          <div class="detail-image-card reveal">
+            <img id="detailImage" src="" alt="" class="detail-img" loading="eager" />
+          </div>
+
+          <!-- Price Card -->
+          <div class="detail-price-card glass-card reveal reveal-delay-1" style="text-align:center; padding:28px;">
+            <p style="font-size:0.85rem; color:var(--text-secondary); font-weight:600; letter-spacing:0.8px; text-transform:uppercase; margin-bottom:8px;">One-Time Price</p>
+            <div style="font-size:3rem; font-weight:900; color:var(--white);" id="detailPriceCard">0DT</div>
+            <p style="font-size:0.82rem; color:var(--text-secondary); margin-top:4px;">Lifetime access • Full documentation</p>
+            <button id="detailBuyBtn2" onclick="document.getElementById('detailBuyBtn').click()" class="btn btn-primary" style="width:100%; justify-content:center; margin-top:20px; padding:16px;">
+              Buy Now on WhatsApp
+            </button>
+            <a id="detailDemoBtn2" href="contact.html" class="btn btn-ghost" style="width:100%; justify-content:center; margin-top:10px; padding:14px;">
+              Request a Demo
+            </a>
+          </div>
+
+          <!-- Tools Card -->
+          <div class="glass-card reveal reveal-delay-2" style="padding:24px;">
+            <h4 style="color:var(--white); font-size:0.85rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; margin-bottom:16px;">Tools &amp; Integrations</h4>
+            <div id="detailTools" class="tools-list" style="gap:8px;"></div>
+          </div>
+
+          <!-- Support Card -->
+          <div class="glass-card reveal reveal-delay-3" style="padding:24px;">
+            <h4 style="color:var(--white); font-size:0.85rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; margin-bottom:16px;">What's Included</h4>
+            <ul style="display:flex; flex-direction:column; gap:10px; list-style:none;">
+              <li class="include-item">✅ Full n8n workflow file</li>
+              <li class="include-item">✅ Step-by-step setup guide</li>
+              <li class="include-item">✅ Video walkthrough</li>
+              <li class="include-item">✅ 30-day email support</li>
+              <li class="include-item">✅ Future updates included</li>
+            </ul>
+          </div>
+        </aside>
+
+        <!-- Right: Long description -->
+        <main class="detail-main">
+          <div class="glass-card reveal" style="padding:40px 36px;">
+            <h2 style="color:var(--white); font-size:1.4rem; margin-bottom:24px; border-bottom:1px solid rgba(245,240,232,0.08); padding-bottom:16px;">About This Workflow</h2>
+            <div id="detailLongDesc" class="detail-long-desc"></div>
+          </div>
+
+          <!-- CTA Banner -->
+          <div class="detail-cta-banner reveal reveal-delay-1">
+            <div>
+              <h3 style="color:var(--white); font-size:1.2rem;">Ready to automate your business?</h3>
+              <p style="font-size:0.9rem; margin:0; margin-top:4px;">One-time purchase. Full support included. Live within hours.</p>
+            </div>
+            <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+              <button onclick="document.getElementById('detailBuyBtn').click()" class="btn btn-primary">Buy Now</button>
+              <a href="contact.html" class="btn btn-ghost">Ask a Question</a>
+            </div>
+          </div>
+
+          <!-- Related back link -->
+          <div class="reveal reveal-delay-2" style="margin-top:32px; text-align:center;">
+            <a href="workflows.html" class="btn btn-outline">← Browse All Workflows</a>
+          </div>
+        </main>
+
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ===== FOOTER ===== -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="index.html" class="nav-logo">Tech<span>Flows</span> TN</a>
+        <p>Tunisia's leading tech automation agency. We build AI workflows and smart integrations that scale your business.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Services</h4>
+        <a href="services.html">AI Automation</a>
+        <a href="services.html">n8n Workflows</a>
+        <a href="services.html">AI Agents</a>
+        <a href="services.html">API Integrations</a>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <a href="about.html">About Us</a>
+        <a href="workflows.html">Workflows Store</a>
+        <a href="contact.html">Contact</a>
+      </div>
+      <div class="footer-col">
+        <h4>Contact</h4>
+        <a href="mailto:mariemjammeli99@gmail.com">mariemjammeli99@gmail.com</a>
+        <a href="https://wa.me/21650066125" target="_blank">WhatsApp Us</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2025 TechFlows TN. All rights reserved.</p>
+      <span>Built with ❤️ in Tunisia</span>
+    </div>
+  </div>
+</footer>
+
+<!-- Supabase CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+<script src="js/main.js"></script>
+<script src="js/workflow-detail.js"></script>
+</body>
+</html>

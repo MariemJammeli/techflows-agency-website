@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="TechFlows TN Workflows Store – Browse and buy ready-made n8n automation workflows for AI, CRM, WhatsApp, and more." />
+  <title>Workflows Store – TechFlows TN</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/workflow-detail.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>" />
+</head>
+<body style="opacity:0">
+
+<!-- ===== NAVBAR ===== -->
+<nav class="navbar" id="navbar">
+  <div class="nav-container">
+    <a href="index.html" class="nav-logo">Tech<span>Flows</span> TN</a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="services.html">Services</a>
+      <a href="workflows.html" class="active">Workflows</a>
+      <a href="about.html">About</a>
+      <a href="contact.html" class="nav-cta">Contact Us</a>
+    </div>
+    <div class="hamburger" id="hamburger"><span></span><span></span><span></span></div>
+  </div>
+</nav>
+<div class="mobile-nav" id="mobileNav">
+  <a href="index.html">Home</a>
+  <a href="services.html">Services</a>
+  <a href="workflows.html">Workflows</a>
+  <a href="about.html">About</a>
+  <a href="contact.html">Contact</a>
+</div>
+
+<!-- ===== PAGE HERO ===== -->
+<section class="page-hero">
+  <div class="container">
+    <div class="section-tag reveal">Ready-Made Automations</div>
+    <h1 class="reveal" style="color:var(--white); margin-top:12px;">Workflows <span style="color:var(--salmon)">Store</span></h1>
+    <p class="hero-sub reveal" style="margin-top:16px; max-width:600px; margin-left:auto; margin-right:auto;">
+      Production-ready automation workflows — buy, deploy, and start saving time today. No coding required.
+    </p>
+  </div>
+</section>
+
+<!-- ===== FILTER & GRID ===== -->
+<section class="section" style="padding-top:0">
+  <div class="container">
+
+    <!-- Filter Buttons -->
+    <div class="store-filters reveal" id="storeFilters">
+      <button class="filter-btn active" data-filter="all">All Workflows</button>
+      <!-- Categories injected dynamically by workflows.js -->
+    </div>
+
+    <!-- Loading Skeleton -->
+    <div id="loadingSkeleton" class="skeleton-cards-grid" style="display:none;">
+      <div class="skeleton-card" role="status" aria-label="Loading...">
+        <div class="skeleton-card-img"></div>
+        <div class="skeleton-card-body">
+          <div class="skeleton-line" style="width:60%"></div>
+          <div class="skeleton-line" style="width:90%"></div>
+          <div class="skeleton-line" style="width:75%"></div>
+          <div class="skeleton-line" style="width:40%"></div>
+        </div>
+      </div>
+      <div class="skeleton-card">
+        <div class="skeleton-card-img"></div>
+        <div class="skeleton-card-body">
+          <div class="skeleton-line" style="width:55%"></div>
+          <div class="skeleton-line" style="width:85%"></div>
+          <div class="skeleton-line" style="width:70%"></div>
+          <div class="skeleton-line" style="width:45%"></div>
+        </div>
+      </div>
+      <div class="skeleton-card">
+        <div class="skeleton-card-img"></div>
+        <div class="skeleton-card-body">
+          <div class="skeleton-line" style="width:65%"></div>
+          <div class="skeleton-line" style="width:80%"></div>
+          <div class="skeleton-line" style="width:60%"></div>
+          <div class="skeleton-line" style="width:50%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error Message -->
+    <div id="errorMessage" class="store-error" style="display:none;">
+      <p style="font-size:2rem; margin-bottom:12px;">⚠️</p>
+      <p>Failed to load workflows. Please check your connection and try again.</p>
+      <button onclick="location.reload()" class="btn btn-outline" style="margin-top:16px;">Retry</button>
+    </div>
+
+    <!-- Dynamic Workflows Grid (populated by workflows.js) -->
+    <div class="workflows-grid" id="workflowsGrid" style="display:none;"></div>
+
+  </div>
+</section>
+
+<!-- ===== CUSTOM REQUEST ===== -->
+<section class="section" style="background:var(--black-soft);">
+  <div class="container">
+    <div class="cta-card reveal">
+      <div class="section-tag">Custom Workflows</div>
+      <h2>Don't see what you need? <span class="gradient-text">Let's Build It.</span></h2>
+      <p>We build fully custom workflows tailored to your exact business process. Tell us your requirements.</p>
+      <div class="cta-actions">
+        <a href="contact.html" class="btn btn-primary btn-lg">Request Custom Workflow</a>
+        <a href="https://wa.me/21650066125" target="_blank" class="btn btn-outline btn-lg">Chat on WhatsApp</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="index.html" class="nav-logo">Tech<span>Flows</span> TN</a>
+        <p>Tunisia's leading tech automation agency. We build AI workflows and smart integrations that scale your business.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Services</h4>
+        <a href="services.html">AI Automation</a>
+        <a href="services.html">n8n Workflows</a>
+        <a href="services.html">AI Agents</a>
+        <a href="services.html">API Integrations</a>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <a href="about.html">About Us</a>
+        <a href="workflows.html">Workflows Store</a>
+        <a href="contact.html">Contact</a>
+      </div>
+      <div class="footer-col">
+        <h4>Contact</h4>
+        <a href="mailto:mariemjammeli99@gmail.com">mariemjammeli99@gmail.com</a>
+        <a href="https://wa.me/21650066125" target="_blank">WhatsApp Us</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2025 TechFlows TN. All rights reserved.</p>
+      <span>Built with ❤️ in Tunisia</span>
+    </div>
+  </div>
+</footer>
+
+<!-- Supabase CDN + App Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+<script src="js/main.js"></script>
+<script src="js/workflows.js"></script>
+</body>
+</html>

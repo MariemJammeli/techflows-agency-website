@@ -1,0 +1,9 @@
+node_modules/
+.DS_Store
+.gemini/
+.env
+*.log
+walkthrough.md
+implementation_plan.md
+task.md
+techflows_workflows.csv
