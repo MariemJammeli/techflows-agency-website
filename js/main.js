@@ -97,9 +97,31 @@ document.querySelectorAll('[data-target]').forEach(el => {
   counterObserver.observe(el);
 });
 
-// ---- Contact Form ----
+// ---- Contact Form & URL Pre-fill ----
 const contactForm = document.getElementById('contactForm');
 const formSuccess = document.querySelector('.form-success');
+
+function initContactFormPrefill() {
+  const serviceSelect = document.getElementById('service');
+  const messageInput = document.getElementById('message');
+  if (!serviceSelect && !messageInput) return;
+
+  const params = new URLSearchParams(window.location.search);
+  const serviceParam = params.get('service');
+  const courseParam = params.get('course');
+  const subjectParam = params.get('subject');
+
+  if (serviceParam && serviceSelect) {
+    serviceSelect.value = serviceParam;
+  }
+
+  if (courseParam && messageInput) {
+    messageInput.value = `Hello TechFlows TN! I would like to get more information and the complete training plan for the "${courseParam}" formation.`;
+  } else if (subjectParam && messageInput) {
+    messageInput.value = `Regarding: ${subjectParam}\n\n`;
+  }
+}
+initContactFormPrefill();
 
 contactForm?.addEventListener('submit', (e) => {
   e.preventDefault();
