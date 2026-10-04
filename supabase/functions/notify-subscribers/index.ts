@@ -1,6 +1,7 @@
 // TechFlows TN — newsletter emails:
 //   * a new blog post is published  -> email every active subscriber
-//   * someone subscribes (or re-subscribes after unsubscribing) -> welcome email
+//   * someone subscribes (or re-subscribes after unsubscribing) -> welcome email,
+//     plus a short "new subscriber" email to the site owner
 //
 // Called by database triggers on public.blogs and public.newsletter_subscribers,
 // which send a shared secret kept in Supabase Vault (see the migrations).
@@ -13,6 +14,8 @@
 // Or send through Resend (needs a domain verified in Resend):
 //   RESEND_API_KEY       Resend API key
 //   FROM_EMAIL           e.g. "TechFlows TN <blog@yourdomain.com>"
+// Optional:
+//   NOTIFY_EMAIL         where "new subscriber" emails go (defaults to GMAIL_USER)
 // SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are provided by Supabase automatically.
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
@@ -20,7 +23,7 @@ import nodemailer from 'npm:nodemailer@6';
 
 const RESEND_BATCH_LIMIT = 100;
 
-type Email = { to: string; subject: string; html: string; unsubscribeUrl: string };
+type Email = { to: string; subject: string; html: string; unsubscribeUrl?: string };
 
 // Sends a list of emails, returning how many went out and any error messages.
 type Sender = (emails: Email[]) => Promise<{ sent: number; failures: string[] }>;
@@ -47,7 +50,7 @@ function gmailSender(user: string, appPassword: string): Sender {
             to: email.to,
             subject: email.subject,
             html: email.html,
-            headers: { 'List-Unsubscribe': `<${email.unsubscribeUrl}>` },
+            headers: email.unsubscribeUrl ? { 'List-Unsubscribe': `<${email.unsubscribeUrl}>` } : undefined,
           });
           sent++;
         } catch (err) {
@@ -71,7 +74,7 @@ function resendSender(apiKey: string, from: string): Sender {
         to: [email.to],
         subject: email.subject,
         html: email.html,
-        headers: { 'List-Unsubscribe': `<${email.unsubscribeUrl}>` },
+        headers: email.unsubscribeUrl ? { 'List-Unsubscribe': `<${email.unsubscribeUrl}>` } : undefined,
       }));
 
       const res = await fetch('https://api.resend.com/emails/batch', {
@@ -171,12 +174,49 @@ function buildWelcomeHtml(blogUrl: string, unsubscribeUrl: string): string {
   );
 }
 
-// Welcome email for a new (or returning) subscriber.
+function buildOwnerNotificationHtml(email: string, returning: boolean, activeCount: number | null): string {
+  const p = 'font-size:15px;line-height:1.6;color:#b5afa6;margin:0 0 12px;';
+  return `<!doctype html>
+<html><body style="margin:0;background:#0b0b0b;font-family:Inter,Arial,sans-serif;color:#f5f0e8;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px;">
+    <table role="presentation" width="100%" style="max-width:560px;"><tr><td>
+      <h1 style="font-size:22px;line-height:1.3;margin:0 0 16px;color:#ffffff;">${returning ? 'A subscriber came back' : 'New blog subscriber'}</h1>
+      <p style="${p}"><strong style="color:#FA8072;">${escapeHtml(email)}</strong> ${returning ? 'subscribed again' : 'just subscribed'} to the TechFlows TN blog.</p>
+      ${activeCount !== null ? `<p style="${p}">You now have ${activeCount} active subscriber${activeCount === 1 ? '' : 's'}.</p>` : ''}
+    </td></tr></table>
+  </td></tr></table>
+</body></html>`;
+}
+
+// Tells the site owner who subscribed. Best effort: never blocks the welcome email.
+async function notifyOwner(
+  supabase: ReturnType<typeof createClient>,
+  send: Sender,
+  ownerEmail: string,
+  subscriberEmail: string,
+  returning: boolean,
+): Promise<void> {
+  const { count } = await supabase
+    .from('newsletter_subscribers')
+    .select('id', { count: 'exact', head: true })
+    .is('unsubscribed_at', null);
+
+  const result = await send([{
+    to: ownerEmail,
+    subject: `${returning ? 'Subscriber back' : 'New subscriber'}: ${subscriberEmail}`,
+    html: buildOwnerNotificationHtml(subscriberEmail, returning, count ?? null),
+  }]);
+  if (result.failures.length > 0) console.error('Owner notification failed:', result.failures);
+}
+
+// Welcome email for a new (or returning) subscriber, plus a note to the owner.
 async function sendWelcome(
   supabase: ReturnType<typeof createClient>,
   send: Sender,
   siteUrl: string,
+  ownerEmail: string | undefined,
   subscriberId: string,
+  returning: boolean,
 ): Promise<Response> {
   const { data: subscriber, error } = await supabase
     .from('newsletter_subscribers')
@@ -190,6 +230,8 @@ async function sendWelcome(
     return Response.json({ error: error.message }, { status: 500 });
   }
   if (!subscriber) return Response.json({ skipped: 'subscriber not active' });
+
+  if (ownerEmail) await notifyOwner(supabase, send, ownerEmail, subscriber.email, returning);
 
   const unsubscribeUrl = `${siteUrl}/unsubscribe?token=${subscriber.unsubscribe_token}`;
   const result = await send([{
@@ -213,6 +255,7 @@ Deno.serve(async (req) => {
   // post as sent without emailing anyone.
   let siteUrl: string;
   let send: Sender;
+  const ownerEmail = optionalEnv('NOTIFY_EMAIL') ?? optionalEnv('GMAIL_USER');
   try {
     siteUrl = env('SITE_URL').replace(/\/+$/, '');
     const gmailUser = optionalEnv('GMAIL_USER');
@@ -240,7 +283,7 @@ Deno.serve(async (req) => {
   const record = payload?.record;
 
   if (payload?.table === 'newsletter_subscribers' && record?.id) {
-    return sendWelcome(supabase, send, siteUrl, record.id);
+    return sendWelcome(supabase, send, siteUrl, ownerEmail, record.id, payload.type === 'UPDATE');
   }
 
   if (payload?.table !== 'blogs' || !record?.id || !record.is_published) {
