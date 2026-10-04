@@ -1,6 +1,6 @@
 /**
  * TechFlows TN — Blogs & Weekly Insights
- * Supports fetching weekly blogs, category filter, live search, and interactive Likes.
+ * Supports fetching weekly blogs, category & language filters, live search, and interactive Likes.
  */
 
 'use strict';
@@ -19,6 +19,7 @@ const FALLBACK_BLOGS = [
     author: 'Mariem Jammeli',
     read_time: '5 min read',
     image_url: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=800',
+    language: 'en',
     likes_count: 28,
     tags: ['n8n', 'OpenAI', 'CRM', 'Lead Gen'],
     published_at: new Date(Date.now() - 3 * 86400000).toISOString()
@@ -32,6 +33,7 @@ const FALLBACK_BLOGS = [
     author: 'Mariem Jammeli',
     read_time: '6 min read',
     image_url: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=800',
+    language: 'en',
     likes_count: 41,
     tags: ['n8n', 'Zapier', 'Cloud Hosting', 'Tunisia Tech'],
     published_at: new Date(Date.now() - 7 * 86400000).toISOString()
@@ -45,6 +47,7 @@ const FALLBACK_BLOGS = [
     author: 'Mariem Jammeli',
     read_time: '7 min read',
     image_url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800',
+    language: 'en',
     likes_count: 53,
     tags: ['WhatsApp', 'AI Agents', 'Chatbots', 'Supabase'],
     published_at: new Date(Date.now() - 14 * 86400000).toISOString()
@@ -58,6 +61,7 @@ const FALLBACK_BLOGS = [
     author: 'Mariem Jammeli',
     read_time: '4 min read',
     image_url: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=800',
+    language: 'en',
     likes_count: 22,
     tags: ['Best Practices', 'Productivity', 'Strategy'],
     published_at: new Date(Date.now() - 21 * 86400000).toISOString()
@@ -66,7 +70,18 @@ const FALLBACK_BLOGS = [
 
 let allBlogs = [];
 let activeBlogCategory = 'all';
+let activeBlogLanguage = 'all'; // 'all' | 'fr' | 'en'
 let blogSearchQuery = '';
+let blogsFetchId = 0; // guards against out-of-order responses when switching language quickly
+
+// Blogs without a language value are treated as English
+function getBlogLanguage(blog) {
+  return (blog.language || 'en').toLowerCase();
+}
+
+function matchesActiveLanguage(blog) {
+  return activeBlogLanguage === 'all' || getBlogLanguage(blog) === activeBlogLanguage;
+}
 
 // Get array of liked blog IDs from localStorage
 function getLikedBlogIds() {
@@ -177,7 +192,7 @@ function buildBlogCardHtml(blog, index) {
   const imgUrl = blog.image_url || 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=800';
 
   return `
-    <article class="blog-card reveal visible" data-category="${blog.category}" style="animation-delay: ${index * 0.08}s">
+    <article class="blog-card reveal visible" data-category="${blog.category}" data-language="${getBlogLanguage(blog)}" style="animation-delay: ${index * 0.08}s">
       <div class="blog-thumb-wrap">
         <a href="${detailUrl}">
           <img src="${imgUrl}" alt="${blog.title}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=800'" />
@@ -186,6 +201,7 @@ function buildBlogCardHtml(blog, index) {
       </div>
       <div class="blog-content">
         <div class="blog-meta-top">
+          <span class="blog-lang-tag" title="${getBlogLanguage(blog) === 'fr' ? 'Article en français' : 'Article in English'}">${getBlogLanguage(blog).toUpperCase()}</span>
           <span>
             <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
             ${blog.read_time || '5 min read'}
@@ -233,38 +249,54 @@ function buildBlogCardHtml(blog, index) {
   `;
 }
 
-// Fetch all published blogs
+// Fetch published blogs, filtered by the active language in Supabase
 async function fetchBlogs() {
   const blogsGrid = document.getElementById('blogsGrid');
   const featuredBlogsGrid = document.getElementById('featuredBlogsGrid');
   const blogsLoading = document.getElementById('blogsLoadingSkeleton');
+  const fetchId = ++blogsFetchId;
 
   if (blogsLoading) blogsLoading.style.display = 'block';
 
+  let blogs;
   try {
     if (typeof supabaseClient !== 'undefined') {
-      const { data, error } = await supabaseClient
+      let query = supabaseClient
         .from('blogs')
         .select('*')
-        .eq('is_published', true)
-        .order('published_at', { ascending: false });
+        .eq('is_published', true);
+
+      if (activeBlogLanguage !== 'all') {
+        query = query.eq('language', activeBlogLanguage);
+      }
+
+      const { data, error } = await query.order('published_at', { ascending: false });
 
       if (error) throw error;
-      allBlogs = (data && data.length > 0) ? data : FALLBACK_BLOGS;
+      // Only fall back to sample data when there are no blogs at all,
+      // not when a language simply has no articles yet
+      if (data && data.length > 0) {
+        blogs = data;
+      } else {
+        blogs = activeBlogLanguage === 'all' ? FALLBACK_BLOGS : [];
+      }
     } else {
-      allBlogs = FALLBACK_BLOGS;
+      blogs = FALLBACK_BLOGS;
     }
   } catch (err) {
     console.warn('Could not fetch blogs from Supabase, using local fallback:', err);
-    allBlogs = FALLBACK_BLOGS;
+    blogs = FALLBACK_BLOGS;
   }
 
+  // A newer fetch (e.g. another language click) has started; drop this result
+  if (fetchId !== blogsFetchId) return;
+
+  allBlogs = blogs;
   if (blogsLoading) blogsLoading.style.display = 'none';
 
   // Render on blogs.html if grid exists
   if (blogsGrid) {
     renderFilteredBlogs();
-    setupBlogFiltersAndSearch();
   }
 
   // Render on index.html if featuredBlogsGrid exists
@@ -289,7 +321,8 @@ function renderFilteredBlogs() {
       (blog.summary && blog.summary.toLowerCase().includes(query)) ||
       (blog.category && blog.category.toLowerCase().includes(query));
 
-    return matchesCategory && matchesSearch;
+    // Language is filtered in Supabase; this also covers the local fallback data
+    return matchesCategory && matchesSearch && matchesActiveLanguage(blog);
   });
 
   if (filtered.length === 0) {
@@ -298,7 +331,7 @@ function renderFilteredBlogs() {
         <p style="font-size:2.5rem; margin-bottom:12px;">📰</p>
         <h3 style="color:var(--white); margin-bottom:8px;">No weekly blogs found</h3>
         <p style="color:var(--text-secondary); max-width:400px; margin:0 auto 20px;">
-          Try adjusting your search query or selecting a different category.
+          Try adjusting your search query or selecting a different category or language.
         </p>
         <button class="btn btn-outline" onclick="resetBlogFilters()">Reset Filters</button>
       </div>
@@ -318,9 +351,10 @@ function renderFeaturedBlogsPreview() {
   featuredBlogsGrid.innerHTML = previewList.map((blog, idx) => buildBlogCardHtml(blog, idx)).join('');
 }
 
-// Setup search input and category pills
+// Setup search input, category pills and language toggle
 function setupBlogFiltersAndSearch() {
   const filterBtns = document.querySelectorAll('.blog-filter-btn');
+  const langBtns = document.querySelectorAll('.blog-lang-btn');
   const searchInput = document.getElementById('blogSearchInput');
 
   filterBtns.forEach(btn => {
@@ -332,6 +366,16 @@ function setupBlogFiltersAndSearch() {
     });
   });
 
+  langBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const lang = btn.dataset.lang || 'all';
+      if (lang === activeBlogLanguage) return;
+      setActiveLanguageButton(lang);
+      activeBlogLanguage = lang;
+      fetchBlogs();
+    });
+  });
+
   if (searchInput) {
     searchInput.addEventListener('input', (e) => {
       blogSearchQuery = e.target.value;
@@ -340,8 +384,19 @@ function setupBlogFiltersAndSearch() {
   }
 }
 
+function setActiveLanguageButton(lang) {
+  document.querySelectorAll('.blog-lang-btn').forEach(b => {
+    const isActive = b.dataset.lang === lang;
+    b.classList.toggle('active', isActive);
+    b.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+  });
+}
+
 function resetBlogFilters() {
+  const languageChanged = activeBlogLanguage !== 'all';
   activeBlogCategory = 'all';
+  activeBlogLanguage = 'all';
+  setActiveLanguageButton('all');
   blogSearchQuery = '';
   const searchInput = document.getElementById('blogSearchInput');
   if (searchInput) searchInput.value = '';
@@ -350,8 +405,12 @@ function resetBlogFilters() {
     if (b.dataset.filter === 'all') b.classList.add('active');
     else b.classList.remove('active');
   });
-  renderFilteredBlogs();
+  if (languageChanged) fetchBlogs();
+  else renderFilteredBlogs();
 }
 
 // Initialize on DOM load
-document.addEventListener('DOMContentLoaded', fetchBlogs);
+document.addEventListener('DOMContentLoaded', () => {
+  if (document.getElementById('blogsGrid')) setupBlogFiltersAndSearch();
+  fetchBlogs();
+});
