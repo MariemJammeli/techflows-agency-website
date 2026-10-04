@@ -67,7 +67,23 @@ function buildEmailHtml(blog: Blog, postUrl: string, unsubscribeUrl: string): st
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 });
-  if (req.headers.get('x-webhook-secret') !== env('WEBHOOK_SECRET')) {
+
+  // Read every secret before claiming a post, so a missing one never marks a
+  // post as sent without emailing anyone.
+  let config: { webhookSecret: string; resendApiKey: string; fromEmail: string; siteUrl: string };
+  try {
+    config = {
+      webhookSecret: env('WEBHOOK_SECRET'),
+      resendApiKey: env('RESEND_API_KEY'),
+      fromEmail: env('FROM_EMAIL'),
+      siteUrl: env('SITE_URL').replace(/\/+$/, ''),
+    };
+  } catch (err) {
+    console.error(String(err));
+    return Response.json({ error: 'Function is not configured yet' }, { status: 500 });
+  }
+
+  if (req.headers.get('x-webhook-secret') !== config.webhookSecret) {
     return new Response('Unauthorized', { status: 401 });
   }
 
@@ -97,7 +113,7 @@ Deno.serve(async (req) => {
   if (!claimed) return Response.json({ skipped: 'already notified' });
 
   const blog = claimed as Blog;
-  const siteUrl = env('SITE_URL').replace(/\/+$/, '');
+  const { siteUrl } = config;
   const postUrl = `${siteUrl}/blog-detail?id=${encodeURIComponent(blog.id)}`;
   const subject = blog.language === 'fr' ? `Nouvel article : ${blog.title}` : `New article: ${blog.title}`;
 
@@ -123,7 +139,7 @@ Deno.serve(async (req) => {
       const batch = subscribers.slice(i, i + RESEND_BATCH_LIMIT).map((s) => {
         const unsubscribeUrl = `${siteUrl}/unsubscribe?token=${s.unsubscribe_token}`;
         return {
-          from: env('FROM_EMAIL'),
+          from: config.fromEmail,
           to: [s.email],
           subject,
           html: buildEmailHtml(blog, postUrl, unsubscribeUrl),
@@ -134,7 +150,7 @@ Deno.serve(async (req) => {
       const res = await fetch('https://api.resend.com/emails/batch', {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${env('RESEND_API_KEY')}`,
+          Authorization: `Bearer ${config.resendApiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(batch),
