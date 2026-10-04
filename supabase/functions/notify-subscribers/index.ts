@@ -2,15 +2,90 @@
 //
 // Called by the notify_subscribers_on_publish trigger on public.blogs, which
 // sends a shared secret kept in Supabase Vault (see the migrations).
-// Sends through Resend (https://resend.com). Required secrets:
-//   RESEND_API_KEY   Resend API key
-//   FROM_EMAIL       e.g. "TechFlows TN <blog@yourdomain.com>" (domain verified in Resend)
-//   SITE_URL         e.g. "https://techflows.tn" (no trailing slash)
+//
+// Secrets:
+//   SITE_URL             e.g. "https://techflows.tn" (no trailing slash), always required
+// Send through Gmail (used when both are set; no domain needed, ~500 emails/day):
+//   GMAIL_USER           the Gmail address, e.g. "you@gmail.com"
+//   GMAIL_APP_PASSWORD   a Google "app password" (requires 2-Step Verification)
+// Or send through Resend (needs a domain verified in Resend):
+//   RESEND_API_KEY       Resend API key
+//   FROM_EMAIL           e.g. "TechFlows TN <blog@yourdomain.com>"
 // SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are provided by Supabase automatically.
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import nodemailer from 'npm:nodemailer@6';
 
 const RESEND_BATCH_LIMIT = 100;
+
+type Email = { to: string; subject: string; html: string; unsubscribeUrl: string };
+
+// Sends a list of emails, returning how many went out and any error messages.
+type Sender = (emails: Email[]) => Promise<{ sent: number; failures: string[] }>;
+
+function gmailSender(user: string, appPassword: string): Sender {
+  return async (emails) => {
+    // Port 465 (implicit TLS): Supabase blocks outgoing 25 and 587.
+    const transport = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
+      pool: true,
+      maxConnections: 1,
+      auth: { user, pass: appPassword.replace(/\s+/g, '') },
+    });
+
+    let sent = 0;
+    const failures: string[] = [];
+    try {
+      for (const email of emails) {
+        try {
+          await transport.sendMail({
+            from: `"TechFlows TN" <${user}>`,
+            to: email.to,
+            subject: email.subject,
+            html: email.html,
+            headers: { 'List-Unsubscribe': `<${email.unsubscribeUrl}>` },
+          });
+          sent++;
+        } catch (err) {
+          failures.push(`gmail: ${String(err)}`);
+        }
+      }
+    } finally {
+      transport.close();
+    }
+    return { sent, failures };
+  };
+}
+
+function resendSender(apiKey: string, from: string): Sender {
+  return async (emails) => {
+    let sent = 0;
+    const failures: string[] = [];
+    for (let i = 0; i < emails.length; i += RESEND_BATCH_LIMIT) {
+      const batch = emails.slice(i, i + RESEND_BATCH_LIMIT).map((email) => ({
+        from,
+        to: [email.to],
+        subject: email.subject,
+        html: email.html,
+        headers: { 'List-Unsubscribe': `<${email.unsubscribeUrl}>` },
+      }));
+
+      const res = await fetch('https://api.resend.com/emails/batch', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(batch),
+      });
+
+      if (res.ok) sent += batch.length;
+      else failures.push(`resend ${res.status}: ${await res.text()}`);
+    }
+    return { sent, failures };
+  };
+}
+
+const optionalEnv = (name: string): string | undefined => Deno.env.get(name) || undefined;
 
 const env = (name: string): string => {
   const value = Deno.env.get(name);
@@ -70,13 +145,15 @@ Deno.serve(async (req) => {
 
   // Read every secret before claiming a post, so a missing one never marks a
   // post as sent without emailing anyone.
-  let config: { resendApiKey: string; fromEmail: string; siteUrl: string };
+  let siteUrl: string;
+  let send: Sender;
   try {
-    config = {
-      resendApiKey: env('RESEND_API_KEY'),
-      fromEmail: env('FROM_EMAIL'),
-      siteUrl: env('SITE_URL').replace(/\/+$/, ''),
-    };
+    siteUrl = env('SITE_URL').replace(/\/+$/, '');
+    const gmailUser = optionalEnv('GMAIL_USER');
+    const gmailPassword = optionalEnv('GMAIL_APP_PASSWORD');
+    send = gmailUser && gmailPassword
+      ? gmailSender(gmailUser, gmailPassword)
+      : resendSender(env('RESEND_API_KEY'), env('FROM_EMAIL'));
   } catch (err) {
     console.error(String(err));
     return Response.json({ error: 'Function is not configured yet' }, { status: 500 });
@@ -117,7 +194,6 @@ Deno.serve(async (req) => {
   if (!claimed) return Response.json({ skipped: 'already notified' });
 
   const blog = claimed as Blog;
-  const { siteUrl } = config;
   const postUrl = `${siteUrl}/blog-detail?id=${encodeURIComponent(blog.id)}`;
   const subject = blog.language === 'fr' ? `Nouvel article : ${blog.title}` : `New article: ${blog.title}`;
 
@@ -139,30 +215,14 @@ Deno.serve(async (req) => {
     }
     if (!subscribers || subscribers.length === 0) break;
 
-    for (let i = 0; i < subscribers.length; i += RESEND_BATCH_LIMIT) {
-      const batch = subscribers.slice(i, i + RESEND_BATCH_LIMIT).map((s) => {
+    const result = await send(
+      subscribers.map((s) => {
         const unsubscribeUrl = `${siteUrl}/unsubscribe?token=${s.unsubscribe_token}`;
-        return {
-          from: config.fromEmail,
-          to: [s.email],
-          subject,
-          html: buildEmailHtml(blog, postUrl, unsubscribeUrl),
-          headers: { 'List-Unsubscribe': `<${unsubscribeUrl}>` },
-        };
-      });
-
-      const res = await fetch('https://api.resend.com/emails/batch', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${config.resendApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(batch),
-      });
-
-      if (res.ok) sent += batch.length;
-      else failures.push(`resend ${res.status}: ${await res.text()}`);
-    }
+        return { to: s.email, subject, html: buildEmailHtml(blog, postUrl, unsubscribeUrl), unsubscribeUrl };
+      }),
+    );
+    sent += result.sent;
+    failures.push(...result.failures);
 
     if (subscribers.length < pageSize) break;
   }
@@ -174,7 +234,7 @@ Deno.serve(async (req) => {
 
   if (failures.length > 0) {
     console.error('notify-subscribers failures:', failures);
-    return Response.json({ sent, failures }, { status: 500 });
+    return Response.json({ sent, failed: failures.length, failures: failures.slice(0, 10) }, { status: 500 });
   }
   return Response.json({ sent });
 });
