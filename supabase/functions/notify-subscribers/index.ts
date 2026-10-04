@@ -1,11 +1,11 @@
 // TechFlows TN — emails every active newsletter subscriber when a blog post is published.
 //
-// Triggered by a Supabase Database Webhook on public.blogs (INSERT and UPDATE).
+// Called by the notify_subscribers_on_publish trigger on public.blogs, which
+// sends a shared secret kept in Supabase Vault (see the migrations).
 // Sends through Resend (https://resend.com). Required secrets:
 //   RESEND_API_KEY   Resend API key
 //   FROM_EMAIL       e.g. "TechFlows TN <blog@yourdomain.com>" (domain verified in Resend)
 //   SITE_URL         e.g. "https://techflows.tn" (no trailing slash)
-//   WEBHOOK_SECRET   any long random string, also set as the webhook's x-webhook-secret header
 // SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are provided by Supabase automatically.
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
@@ -70,10 +70,9 @@ Deno.serve(async (req) => {
 
   // Read every secret before claiming a post, so a missing one never marks a
   // post as sent without emailing anyone.
-  let config: { webhookSecret: string; resendApiKey: string; fromEmail: string; siteUrl: string };
+  let config: { resendApiKey: string; fromEmail: string; siteUrl: string };
   try {
     config = {
-      webhookSecret: env('WEBHOOK_SECRET'),
       resendApiKey: env('RESEND_API_KEY'),
       fromEmail: env('FROM_EMAIL'),
       siteUrl: env('SITE_URL').replace(/\/+$/, ''),
@@ -83,7 +82,14 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'Function is not configured yet' }, { status: 500 });
   }
 
-  if (req.headers.get('x-webhook-secret') !== config.webhookSecret) {
+  const supabase = createClient(env('SUPABASE_URL'), env('SUPABASE_SERVICE_ROLE_KEY'));
+
+  const { data: webhookSecret, error: secretError } = await supabase.rpc('get_notify_webhook_secret');
+  if (secretError || !webhookSecret) {
+    console.error('Could not load webhook secret:', secretError);
+    return Response.json({ error: 'Function is not configured yet' }, { status: 500 });
+  }
+  if (req.headers.get('x-webhook-secret') !== webhookSecret) {
     return new Response('Unauthorized', { status: 401 });
   }
 
@@ -92,8 +98,6 @@ Deno.serve(async (req) => {
   if (payload?.table !== 'blogs' || !record?.id || !record.is_published) {
     return Response.json({ skipped: 'not a published blog' });
   }
-
-  const supabase = createClient(env('SUPABASE_URL'), env('SUPABASE_SERVICE_ROLE_KEY'));
 
   // Claim the post: only the first call for a given article gets a row back,
   // so a post is never emailed twice (edits, retries, duplicate webhooks).

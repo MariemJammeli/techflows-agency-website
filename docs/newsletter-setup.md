@@ -6,43 +6,35 @@ with the title, summary, a link to the article and an unsubscribe link.
 
 ## One-time setup
 
-1. **Run the migrations** in the Supabase SQL editor, in order:
-   - `supabase/migrations/20261004000000_add_language_to_blogs.sql`
-   - `supabase/migrations/20261004010000_newsletter_subscriptions.sql`
-
-   The second one creates the `newsletter_subscribers` table and marks every
-   article that is already live as "sent", so nobody gets emails for old posts.
+1. **Run the migrations** in `supabase/migrations/` in order (Supabase SQL
+   editor or `supabase db push`). Besides the subscribers table, they add a
+   `notify_subscribers_on_publish` trigger on `blogs` that calls the Edge
+   Function. The trigger and the function share a secret kept in Supabase
+   Vault, so there is no webhook to configure by hand. Every article already
+   live is marked as "sent", so nobody gets emails for old posts.
 
 2. **Create a Resend account** at https://resend.com, add and verify your
    domain (Domains → Add domain, then add the DNS records it shows), and
    create an API key (API Keys → Create).
 
-3. **Deploy the Edge Function** with the Supabase CLI:
+3. **Deploy the Edge Function and set its secrets** (Edge Functions → Secrets
+   in the dashboard, or the CLI):
 
    ```sh
-   supabase login
-   supabase link --project-ref llsixhavjyzsrtgmusjj
    supabase secrets set \
      RESEND_API_KEY=re_xxx \
      FROM_EMAIL="TechFlows TN <blog@your-domain.com>" \
-     SITE_URL=https://your-site-domain \
-     WEBHOOK_SECRET=<any long random string>
+     SITE_URL=https://your-site-domain
    supabase functions deploy notify-subscribers --no-verify-jwt
    ```
-
-4. **Create the Database Webhook** in the Supabase dashboard
-   (Database → Webhooks → Create a new hook):
-   - Table: `blogs`, events: **Insert** and **Update**
-   - Type: Supabase Edge Functions → `notify-subscribers`, method POST
-   - HTTP header: `x-webhook-secret` = the same `WEBHOOK_SECRET` as above
 
 ## How it behaves
 
 - An email goes out the first time a post has `is_published = true`
   (either inserted as published, or a draft switched to published).
 - Editing a post afterwards never re-sends it (`blogs.notified_at` records
-  when it was sent). To re-send a post, set its `notified_at` back to `null`
-  and save it again.
+  when it was sent). To re-send a post, set its `notified_at` back to `null`,
+  then switch `is_published` off and on again.
 - French posts (`language = 'fr'`) get the email in French.
 - See your subscribers in Table Editor → `newsletter_subscribers`;
   people who unsubscribed have `unsubscribed_at` set.
