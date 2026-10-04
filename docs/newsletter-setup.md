@@ -32,6 +32,10 @@ with the title, summary, a link to the article and an unsubscribe link.
 
 ## How it behaves
 
+- New subscribers get a bilingual (EN/FR) welcome email. People who
+  unsubscribed and subscribe again get it too; submitting the form again
+  while already subscribed sends nothing.
+
 - An email goes out the first time a post has `is_published = true`
   (either inserted as published, or a draft switched to published).
 - Editing a post afterwards never re-sends it (`blogs.notified_at` records
