@@ -409,8 +409,58 @@ function resetBlogFilters() {
   else renderFilteredBlogs();
 }
 
+// Newsletter subscription (stored in Supabase; new posts are emailed by the
+// notify-subscribers Edge Function)
+function setupNewsletterForm() {
+  const form = document.getElementById('newsletterForm');
+  if (!form) return;
+
+  const emailInput = document.getElementById('newsletterEmail');
+  const submitBtn = document.getElementById('newsletterSubmit');
+  const messageEl = document.getElementById('newsletterMessage');
+
+  const showMessage = (text, type) => {
+    if (!messageEl) return;
+    messageEl.textContent = text;
+    messageEl.className = `newsletter-message ${type}`;
+  };
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = emailInput.value.trim();
+
+    if (!email || !emailInput.checkValidity()) {
+      showMessage('Please enter a valid email address.', 'error');
+      emailInput.focus();
+      return;
+    }
+
+    if (typeof supabaseClient === 'undefined') {
+      showMessage('Subscriptions are unavailable right now. Please try again later.', 'error');
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Subscribing...';
+
+    try {
+      const { error } = await supabaseClient.rpc('subscribe_to_newsletter', { p_email: email });
+      if (error) throw error;
+      form.reset();
+      showMessage("You're subscribed! You'll get an email each time a new article is published.", 'success');
+    } catch (err) {
+      console.error('Newsletter subscription failed:', err);
+      showMessage('Something went wrong. Please check your email and try again.', 'error');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Subscribe';
+    }
+  });
+}
+
 // Initialize on DOM load
 document.addEventListener('DOMContentLoaded', () => {
   if (document.getElementById('blogsGrid')) setupBlogFiltersAndSearch();
+  setupNewsletterForm();
   fetchBlogs();
 });

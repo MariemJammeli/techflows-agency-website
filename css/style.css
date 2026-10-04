@@ -1703,6 +1703,15 @@ footer {
   letter-spacing: 0.05em;
 }
 
+.newsletter-message {
+  min-height: 1.4em;
+  margin: 14px auto 0;
+  font-size: 0.9rem;
+}
+
+.newsletter-message.success { color: #7bd88f; }
+.newsletter-message.error { color: var(--salmon); }
+
 .blog-search-box {
   position: relative;
   min-width: 280px;

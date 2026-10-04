@@ -95,19 +95,22 @@
       <div class="section-tag">Never Miss An Article</div>
       <h2 style="font-size:2rem; margin-bottom:12px;">Stay Ahead with <span class="gradient-text">Weekly Tech Drops</span></h2>
       <p style="margin-bottom:28px; max-width:540px;">
-        Subscribe to receive weekly actionable automation templates, AI tips, and business blueprints straight to your inbox.
+        Subscribe and get an email every time a new article goes live: automation templates, AI tips, and business blueprints straight to your inbox.
       </p>
-      <form action="https://formsubmit.co/mariemjammeli99@gmail.com" method="POST" style="max-width:480px; margin:0 auto; display:flex; gap:10px; flex-wrap:wrap;">
-        <input type="hidden" name="_subject" value="New TechFlows TN Blog Subscriber!">
+      <form id="newsletterForm" novalidate style="max-width:480px; margin:0 auto; display:flex; gap:10px; flex-wrap:wrap;">
         <input 
           type="email" 
           name="email" 
+          id="newsletterEmail"
+          autocomplete="email"
+          aria-label="Email address" 
           placeholder="Enter your email address" 
           required 
           style="flex:1; min-width:240px; background:rgba(0,0,0,0.5); border:1px solid rgba(245,240,232,0.15); border-radius:var(--radius-sm); padding:14px 18px; color:var(--text-primary); outline:none;"
         />
-        <button type="submit" class="btn btn-primary" style="padding:14px 24px;">Subscribe</button>
+        <button type="submit" id="newsletterSubmit" class="btn btn-primary" style="padding:14px 24px;">Subscribe</button>
       </form>
+      <p id="newsletterMessage" class="newsletter-message" role="status" aria-live="polite"></p>
     </div>
   </div>
 </section>
