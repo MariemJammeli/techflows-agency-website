@@ -35,6 +35,9 @@ with the title, summary, a link to the article and an unsubscribe link.
 - New subscribers get a bilingual (EN/FR) welcome email. People who
   unsubscribed and subscribe again get it too; submitting the form again
   while already subscribed sends nothing.
+- At the same time, the site owner gets a short "New subscriber" email with
+  the subscriber's address and the current subscriber count. It goes to
+  `NOTIFY_EMAIL` if that secret is set, otherwise to `GMAIL_USER`.
 
 - An email goes out the first time a post has `is_published = true`
   (either inserted as published, or a draft switched to published).
